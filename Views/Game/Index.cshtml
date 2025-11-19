@@ -1,0 +1,43 @@
+﻿@{
+    Layout = null;
+}
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <title>منچ آفلاین</title>
+  <link rel="stylesheet" href="/css/board.css" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    /* حداقل CSS برای قرارگیری */
+    body{font-family:Tahoma, Arial; background:#f7f7f7; text-align:center; padding:16px}
+    .board-wrapper{max-width:720px; margin:0 auto; position:relative}
+    .overlay{position:relative}
+    .piece{width:28px;height:28px;border-radius:50%;position:absolute;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.25)}
+    .red{background:#d9534f} .blue{background:#428bca} .green{background:#5cb85c} .yellow{background:#f0ad4e}
+    .controls{margin-top:12px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+    .btn{padding:8px 12px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer}
+    .status{min-width:240px}
+  </style>
+</head>
+<body>
+  <h2>بازی منچ — آفلاین (چهارنفره)</h2>
+
+  <div class="board-wrapper">
+    <!-- استفاده از SVG آپلود شده -->
+    <div class="overlay">
+      <img id="menchSvg" src="/images/mench-board.svg" class="board" alt="mench board" style="width:100%;height:auto;display:block" />
+      <!-- عنصر نگهدارنده مهره‌ها -->
+      <div id="pieceLayer" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;"></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="rollBtn" class="btn">🎲 انداختن تاس</button>
+    <button id="endTurnBtn" class="btn">پایان نوبت</button>
+    <div class="status" id="status">وضعیت بازی: آماده</div>
+  </div>
+
+  <script src="/js/game.js"></script>
+</body>
+</html>

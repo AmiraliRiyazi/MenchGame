@@ -1,0 +1,3 @@
+.board-wrapper { position: relative; margin: 0 auto; max-width: 720px; }
+.board { display: block; width:100%; height:auto; }
+.piece { transition: transform 400ms cubic-bezier(.22,.9,.37,1); pointer-events:auto; }
