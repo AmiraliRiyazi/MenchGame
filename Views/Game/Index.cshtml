@@ -1,43 +1,40 @@
 ﻿@{
-    Layout = null;
+    ViewData["Title"] = "بازی منچ";
 }
-<!doctype html>
-<html lang="fa" dir="rtl">
-<head>
-  <meta charset="utf-8" />
-  <title>منچ آفلاین</title>
-  <link rel="stylesheet" href="/css/board.css" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    /* حداقل CSS برای قرارگیری */
-    body{font-family:Tahoma, Arial; background:#f7f7f7; text-align:center; padding:16px}
-    .board-wrapper{max-width:720px; margin:0 auto; position:relative}
-    .overlay{position:relative}
-    .piece{width:28px;height:28px;border-radius:50%;position:absolute;transform:translate(-50%,-50%);box-shadow:0 2px 6px rgba(0,0,0,.25)}
-    .red{background:#d9534f} .blue{background:#428bca} .green{background:#5cb85c} .yellow{background:#f0ad4e}
-    .controls{margin-top:12px;display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
-    .btn{padding:8px 12px;border-radius:6px;border:1px solid #ccc;background:#fff;cursor:pointer}
-    .status{min-width:240px}
-  </style>
-</head>
-<body>
-  <h2>بازی منچ — آفلاین (چهارنفره)</h2>
-
-  <div class="board-wrapper">
-    <!-- استفاده از SVG آپلود شده -->
-    <div class="overlay">
-      <img id="menchSvg" src="/images/mench-board.svg" class="board" alt="mench board" style="width:100%;height:auto;display:block" />
-      <!-- عنصر نگهدارنده مهره‌ها -->
-      <div id="pieceLayer" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;"></div>
+<div style="display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap;">
+    <div style="flex:1; min-width:560px;">
+        <div id="board-wrapper" style="position:relative; width:800px; height:800px; margin:auto;">
+            <div id="svg-container" style="position:absolute; inset:0;"></div>
+            <div id="pieces-layer" style="position:absolute; inset:0; pointer-events:none;"></div>
+        </div>
     </div>
-  </div>
 
-  <div class="controls">
-    <button id="rollBtn" class="btn">🎲 انداختن تاس</button>
-    <button id="endTurnBtn" class="btn">پایان نوبت</button>
-    <div class="status" id="status">وضعیت بازی: آماده</div>
-  </div>
+    <div style="width:360px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px; flex-wrap:wrap;">
+            <button id="roll-btn" class="btn-primary">انداختن تاس</button>
+            <button id="end-btn" class="btn-danger">پایان نوبت</button>
+            <div style="margin-right:6px;">
+                <div>نوبت: <strong id="current-turn">-</strong></div>
+                <div>نتیجه تاس: <strong id="dice-result">-</strong></div>
+            </div>
+        </div>
 
-  <script src="/js/game.js"></script>
-</body>
-</html>
+        <div id="messages" style="margin-top:8px;"></div>
+
+        <hr />
+
+        <div>
+            <strong>قوانین مختصر:</strong>
+            <ul>
+                <li>هر بازیکن 4 مهره دارد.</li>
+                <li>برای خروج مهره از خانه باید 6 بیاید.</li>
+                <li>اگر 6 بیاید یک بار دیگر می‌توانید تاس بیندازید.</li>
+                <li>حرکت مهره برابر مقدار تاس است.</li>
+                <li>برخورد: مهرهٔ روی خانهٔ حریف (غیرامن) به خانهٔ اول بازمی‌گردد.</li>
+                <li>ورود به مسیر رنگی فقط در خانهٔ مخصوص آن رنگ میسر است.</li>
+                <li>اگر حرکت مهره از آخرین خانهٔ پایانی عبور کند، حرکت انجام نمی‌شود.</li>
+                <li>بازی زمانی پایان می‌یابد که 4 مهرهٔ یک رنگ به آخر برسند.</li>
+            </ul>
+        </div>
+    </div>
+</div>

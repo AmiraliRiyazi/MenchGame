@@ -1,3 +1,13 @@
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\css\board.css
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\css\site.css
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\favicon.ico
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\images\mench-board.svg
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\js\game.js
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\css\board.css.gz
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\css\site.css.gz
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\favicon.ico.gz
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\images\mench-board.svg.gz
+C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\js\game.js.gz
 C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\appsettings.Development.json
 C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\appsettings.json
 C:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\MenchGame.staticwebassets.runtime.json
@@ -15,11 +25,16 @@ C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.csproj.CoreCompile
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.MvcApplicationPartsAssemblyInfo.cache
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.RazorAssemblyInfo.cache
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.RazorAssemblyInfo.cs
+C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.sourcelink.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\scopedcss\bundle\MenchGame.styles.css
+C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\oo8lwwouxr-az1jpor9vj.gz
+C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\sbvlwmvnin-hfkm9bq1ht.gz
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\369gvxf33h-61n19gt1b8.gz
+C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\pxadrf7aia-smal6njj7b.gz
+C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\44xw6kyxfa-4ivr3jq7yk.gz
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\staticwebassets.build.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\staticwebassets.build.json.cache
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\staticwebassets.development.json
@@ -29,6 +44,3 @@ C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\refint\MenchGame.dll
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.pdb
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.genruntimeconfig.cache
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\ref\MenchGame.dll
-C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\oo8lwwouxr-vejmkzfsex.gz
-C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\pxadrf7aia-qpugr7okif.gz
-C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\44xw6kyxfa-hqaazgqiox.gz
