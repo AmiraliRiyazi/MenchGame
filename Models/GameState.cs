@@ -11,6 +11,7 @@ public class GameState
     public bool GameOver { get; set; } = false;
     public int WinnerPlayerId { get; set; } = -1;
     private HashSet<(int playerId, int pieceId)> _movedPiecesInCurrentTurn = new();
+    private int _consecutiveSixes = 0;
 
     public GameState()
     {
@@ -57,6 +58,23 @@ public class GameState
         DiceValue = rnd.Next(1, 7);
         MustRoll = false;
         _movedPiecesInCurrentTurn.Clear(); // Clear moved pieces when rolling dice
+        
+        // Handle consecutive sixes rule
+        if (DiceValue == 6)
+        {
+            _consecutiveSixes++;
+            // If three consecutive sixes, send a piece back to base
+            if (_consecutiveSixes == 3)
+            {
+                HandleThreeConsecutiveSixes();
+                _consecutiveSixes = 0; // Reset counter
+            }
+        }
+        else
+        {
+            _consecutiveSixes = 0; // Reset counter when not six
+        }
+        
         return DiceValue;
     }
 
@@ -103,20 +121,29 @@ public class GameState
         // Mark this piece as moved in current turn
         _movedPiecesInCurrentTurn.Add((playerId, pieceId));
 
+        int oldPosition = piece.Position;
+        
         // If piece is at base and dice is 6, move it to start position
         if (piece.Position == -1 && DiceValue == 6)
         {
-            piece.Position = 0; // First position on main path
+            piece.Position = GetStartPosition(playerId); // Move to player's start position
         }
         else if (piece.Position >= 0)
         {
             piece.Position += DiceValue;
         }
 
-        // Check if piece reached the finish
-        if (piece.Position >= 43)
+        // Check if piece would go beyond the finish line
+        if (piece.Position > 43)
         {
-            piece.Position = 43;
+            // Can't move, revert position
+            piece.Position = oldPosition;
+            return false;
+        }
+
+        // Check if piece reached the finish
+        if (piece.Position == 43)
+        {
             piece.IsFinished = true;
 
             // Check if player won (all pieces finished)
@@ -128,17 +155,23 @@ public class GameState
         }
 
         // Handle collisions (send opponent pieces back to base)
-        if (piece.Position >= 0 && piece.Position < 40)
+        bool collisionOccurred = false;
+        if (piece.Position >= 0 && piece.Position < 40 && !IsSafePosition(piece.Position))
         {
-            HandleCollisions(playerId, piece.Position);
+            collisionOccurred = HandleCollisions(playerId, piece.Position);
         }
 
         // After moving a piece, clear the moved pieces tracking
         _movedPiecesInCurrentTurn.Clear();
         
-        // If player didn't roll a 6, go to next player
-        if (DiceValue != 6)
+        // If player rolled a 6, they get another turn (unless it was the third consecutive 6)
+        if (DiceValue == 6 && _consecutiveSixes < 3)
         {
+            MustRoll = true; // Player can roll again
+        }
+        else
+        {
+            // If player didn't roll a 6 or it was the third consecutive 6, go to next player
             CurrentPlayerIndex = (CurrentPlayerIndex + 1) % Players.Count;
             MustRoll = true;
         }
@@ -159,11 +192,19 @@ public class GameState
         };
     }
 
-    private void HandleCollisions(int currentPlayerId, int position)
+    private bool IsSafePosition(int position)
     {
-        // Skip collision handling for safe positions (0, 10, 20, 30)
-        if (position == 0 || position == 10 || position == 20 || position == 30)
-            return;
+        // Safe positions are the start positions for each player
+        return position == 0 || position == 10 || position == 20 || position == 30;
+    }
+
+    private bool HandleCollisions(int currentPlayerId, int position)
+    {
+        bool collisionOccurred = false;
+        
+        // Skip collision handling for safe positions
+        if (IsSafePosition(position))
+            return false;
 
         foreach (var player in Players)
         {
@@ -176,10 +217,30 @@ public class GameState
                 if (piece.Position == position && !piece.IsFinished)
                 {
                     piece.Position = -1; // Send back to base
+                    collisionOccurred = true;
                 }
             }
         }
+        
+        return collisionOccurred;
     }
+
+    private void HandleThreeConsecutiveSixes()
+    {
+        var currentPlayer = Players[CurrentPlayerIndex];
+        
+        // Find a piece that is on the board (not at base and not finished)
+        var pieceOnBoard = currentPlayer.Pieces.FirstOrDefault(p => p.Position >= 0 && !p.IsFinished);
+        
+        if (pieceOnBoard != null)
+        {
+            // Send the piece back to base
+            pieceOnBoard.Position = -1;
+        }
+        // If no pieces are on the board, the rule is ignored (as per rules)
+    }
+
+
 
     public Player? GetCurrentPlayer()
     {

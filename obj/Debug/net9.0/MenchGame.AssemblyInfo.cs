@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MenchGame")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a3b5ccb913a651f5e42539c4cf26bb646d896bef")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0052889b382be0281ebd84bd4a8e5fd601d3068b")]
 [assembly: System.Reflection.AssemblyProductAttribute("MenchGame")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MenchGame")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
