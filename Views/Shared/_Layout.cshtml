@@ -2,6 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-eval' https://cdnjs.cloudflare.com">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>منچ - Ludo</title>
     <link rel="stylesheet" href="~/css/site.css" />
@@ -16,16 +17,12 @@
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>بازی منچ (Ludo)</h1>
-            <div>محلی — بدون وابستگی خارجی</div>
-        </header>
-
         <main>
             @RenderBody()
         </main>
     </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
     <script src="~/js/game.js"></script>
 </body>
 </html>

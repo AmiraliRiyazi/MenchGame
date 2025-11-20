@@ -4,8 +4,8 @@
     const START_INDEX = { red: 0, blue: 10, green: 20, yellow: 30 };
     const PLAYER_COUNT = 4;
     const PIECES_PER_PLAYER = 4;
-    const MAIN_PATH_LENGTH = 57;
-    const HOME_LENGTH = 6;
+    const MAIN_PATH_LENGTH = 40;
+    const HOME_LENGTH = 4;
 
     // DOM
     const svgContainer = document.getElementById('svg-container');
@@ -25,8 +25,123 @@
     // انتخاب و حالت اجرا
     let selectedPiece = null;
 
+    // SignalR connection
+    let connection = null;
+
     function setMessage(txt) {
         messagesEl.textContent = txt || '';
+    }
+
+    // اتصال به سرور با استفاده از SignalR
+    async function connectToGame() {
+        try {
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("/gamehub")
+                .build();
+
+            connection.start().then(function () {
+                console.log("Connected to game hub");
+                // Request initial game state
+                connection.invoke("GetGameState");
+            }).catch(function (err) {
+                return console.error(err.toString());
+            });
+
+            // Event handlers for SignalR messages
+            connection.on("DiceRolled", function (diceValue, currentPlayerIndex) {
+                diceResultEl.textContent = diceValue;
+                currentTurnEl.textContent = COLORS[currentPlayerIndex];
+                setMessage(`${COLORS[currentPlayerIndex]}: ${diceValue}`);
+            });
+
+            connection.on("PieceMoved", function (playerId, pieceId, newPosition, oldPosition) {
+                const pieceEl = piecesLayer.querySelector(`.piece[data-player="${playerId}"][data-piece="${pieceId}"]`);
+                if (pieceEl) {
+                    // Update piece position based on new position
+                    updatePiecePosition(pieceEl, playerId, newPosition);
+                }
+            });
+
+            connection.on("NextPlayer", function (nextPlayerIndex) {
+                currentTurnEl.textContent = COLORS[nextPlayerIndex];
+                diceResultEl.textContent = '-';
+                setMessage(`نوبت ${COLORS[nextPlayerIndex]}`);
+            });
+
+            connection.on("GameOver", function (winnerPlayerId) {
+                setMessage(`بازیکن ${COLORS[winnerPlayerId]} برنده شد!`);
+                rollBtn.disabled = true;
+                endBtn.disabled = true;
+            });
+
+            connection.on("GameStateUpdated", function (gameState) {
+                updateGameState(gameState);
+            });
+
+            connection.on("GameReset", function () {
+                location.reload();
+            });
+
+        } catch (err) {
+            console.error(err);
+            setMessage('خطا در اتصال به سرور.');
+        }
+    }
+
+    function updateGameState(gameState) {
+        // Update UI based on game state
+        currentTurnEl.textContent = COLORS[gameState.CurrentPlayerIndex];
+        diceResultEl.textContent = gameState.DiceValue || '-';
+        
+        // Update pieces positions
+        gameState.Players.forEach(player => {
+            player.Pieces.forEach(piece => {
+                const pieceEl = piecesLayer.querySelector(`.piece[data-player="${player.Id}"][data-piece="${piece.Id}"]`);
+                if (pieceEl) {
+                    updatePiecePosition(pieceEl, player.Id, piece.Position);
+                }
+            });
+        });
+    }
+
+    function updatePiecePosition(pieceEl, playerId, position) {
+        const basePositions = [
+            [{x: 100, y: 100}, {x: 200, y: 100}, {x: 100, y: 200}, {x: 200, y: 200}], // Red
+            [{x: 1000, y: 100}, {x: 1100, y: 100}, {x: 1000, y: 200}, {x: 1100, y: 200}], // Blue
+            [{x: 1000, y: 1000}, {x: 1100, y: 1000}, {x: 1000, y: 1100}, {x: 1100, y: 1100}], // Green
+            [{x: 100, y: 1000}, {x: 200, y: 1000}, {x: 100, y: 1100}, {x: 200, y: 1100}]  // Yellow
+        ];
+
+        // If piece is at base (-1)
+        if (position === -1) {
+            const pieceIndex = parseInt(pieceEl.dataset.piece);
+            pieceEl.style.left = basePositions[playerId][pieceIndex].x + 'px';
+            pieceEl.style.top = basePositions[playerId][pieceIndex].y + 'px';
+            return;
+        }
+
+        // If piece is in home path (40-43)
+        if (position >= MAIN_PATH_LENGTH) {
+            const color = COLORS[playerId];
+            const homeIdx = position - MAIN_PATH_LENGTH;
+            if (homeIdx < HOME_LENGTH && homePath[color][homeIdx]) {
+                const node = homePath[color][homeIdx];
+                pieceEl.style.left = node.x + 'px';
+                pieceEl.style.top = node.y + 'px';
+            }
+            return;
+        }
+
+        // If piece is on main path (0-39)
+        if (position >= 0 && position < MAIN_PATH_LENGTH) {
+            const color = COLORS[playerId];
+            const idx = (START_INDEX[color] + position) % MAIN_PATH_LENGTH;
+            const node = path[idx];
+            if (node) {
+                pieceEl.style.left = node.x + 'px';
+                pieceEl.style.top = node.y + 'px';
+            }
+        }
     }
 
     // بارگذاری SVG از مسیر و وارد کردن inline تا بتوانیم از عناصر آن استفاده کنیم
@@ -42,8 +157,8 @@
             if (vb && vb.width && vb.height) {
                 center = { x: vb.x + vb.width / 2, y: vb.y + vb.height / 2 };
             } else {
-                const w = parseFloat(svgEl.getAttribute('width')) || 800;
-                const h = parseFloat(svgEl.getAttribute('height')) || 800;
+                const w = parseFloat(svgEl.getAttribute('width')) || 500;
+                const h = parseFloat(svgEl.getAttribute('height')) || 500;
                 center = { x: w / 2, y: h / 2 };
             }
             return svgEl;
@@ -54,121 +169,122 @@
         }
     }
 
-    // اگر SVG شامل 57 <use href="#Feld"> باشد آن‌ها را می‌خوانیم؛ در غیر اینصورت ما 57 خانه را با use ایجاد می‌کنیم
+    // استخراج مسیر اصلی از SVG شما
     function extractOrCreateOuterPath() {
-        // بررسی useها که به Feld اشاره کنند
-        // توجه: در SVGهای مختلف href ممکن است در فضای XLink باشد؛ استفاده از querySelectorAll مناسب است
-        const uses = Array.from(svgEl.querySelectorAll('use[href="#Feld"], use[*|href="#Feld"]'));
-        if (uses.length >= MAIN_PATH_LENGTH) {
-            path = uses.slice(0, MAIN_PATH_LENGTH).map(u => {
-                const x = parseFloat(u.getAttribute('x')) || 0;
-                const y = parseFloat(u.getAttribute('y')) || 0;
-                const isSafe = u.hasAttribute('data-safe') || false;
-                return { x, y, el: u, isSafe, originalUse: u };
-            });
-        } else {
-            // ایجاد 57 خانه در دایره و اضافه به SVG
-            const group = svgEl.querySelector('#outer-path') || svgEl;
-            path = [];
-            const r = 320; // شعاع
-            const cx = center.x, cy = center.y;
-            for (let i = 0; i < MAIN_PATH_LENGTH; i++) {
-                const angle = (2 * Math.PI * i) / MAIN_PATH_LENGTH - Math.PI / 2; // شروع از بالا
-                const x = Math.round((cx + Math.cos(angle) * r) * 10) / 10;
-                const y = Math.round((cy + Math.sin(angle) * r) * 10) / 10;
-                const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-                use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '#Feld');
-                use.setAttribute('x', x);
-                use.setAttribute('y', y);
-                if (i % 13 === 0) use.setAttribute('data-safe', 'true');
-                if (i === 0) use.setAttribute('data-start', 'red');
-                if (i === 10) use.setAttribute('data-start', 'blue');
-                if (i === 20) use.setAttribute('data-start', 'green');
-                if (i === 30) use.setAttribute('data-start', 'yellow');
-                use.setAttribute('data-i', i);
-                group.appendChild(use);
-                path.push({ x, y, el: use, isSafe: use.hasAttribute('data-safe'), originalUse: use });
-            }
-        }
+        // مسیر اصلی 40 خانه‌ای بر اساس SVG شما
+        const mainPathCoords = [
+            // Start: Red (index 0)
+            {x: 100, y: 500, safe: true},  // 0 - Red start (safe)
+            {x: 200, y: 500},  // 1
+            {x: 300, y: 500},  // 2
+            {x: 400, y: 500},  // 3
+            {x: 500, y: 500},  // 4
+            {x: 500, y: 400},  // 5
+            {x: 500, y: 300},  // 6
+            {x: 500, y: 200},  // 7
+            {x: 500, y: 100},  // 8
+            {x: 600, y: 100},  // 9
+            // Start: Blue (index 10)
+            {x: 700, y: 100, safe: true},  // 10 - Blue start (safe)
+            {x: 700, y: 200},  // 11
+            {x: 700, y: 300},  // 12
+            {x: 700, y: 400},  // 13
+            {x: 700, y: 500},  // 14
+            {x: 800, y: 500},  // 15
+            {x: 900, y: 500},  // 16
+            {x: 1000, y: 500}, // 17
+            {x: 1100, y: 500}, // 18
+            {x: 1100, y: 600}, // 19
+            // Start: Green (index 20)
+            {x: 1100, y: 700, safe: true}, // 20 - Green start (safe)
+            {x: 1000, y: 700}, // 21
+            {x: 900, y: 700},  // 22
+            {x: 800, y: 700},  // 23
+            {x: 700, y: 700},  // 24
+            {x: 700, y: 800},  // 25
+            {x: 700, y: 900},  // 26
+            {x: 700, y: 1000}, // 27
+            {x: 700, y: 1100}, // 28
+            {x: 600, y: 1100}, // 29
+            // Start: Yellow (index 30)
+            {x: 500, y: 1100, safe: true}, // 30 - Yellow start (safe)
+            {x: 500, y: 1000}, // 31
+            {x: 500, y: 900},  // 32
+            {x: 500, y: 800},  // 33
+            {x: 500, y: 700},  // 34
+            {x: 400, y: 700},  // 35
+            {x: 300, y: 700},  // 36
+            {x: 200, y: 700},  // 37
+            {x: 100, y: 700},  // 38
+            {x: 100, y: 600}   // 39
+        ];
 
-        // مرتب سازی بر اساس زاویه نسبت به مرکز (ساعتگرد)
-        path.sort((a, b) => {
-            const ax = a.x - center.x, ay = a.y - center.y;
-            const bx = b.x - center.x, by = b.y - center.y;
-            const anga = Math.atan2(ay, ax);
-            const angb = Math.atan2(by, bx);
-            const na = (anga + 2 * Math.PI) % (2 * Math.PI);
-            const nb = (angb + 2 * Math.PI) % (2 * Math.PI);
-            return na - nb;
-        });
-
-        // چرخش مسیر طوری که خانه start قرمز در index 0 باشد
-        const idxRed = path.findIndex(p => p.originalUse && p.originalUse.getAttribute('data-start') === 'red');
-        if (idxRed !== -1) rotatePathTo(idxRed, 0);
-
-        // اطمینان که آبی/سبز/زرد در 10/20/30 قرار گیرند
-        const adjust = (color, targetIndex) => {
-            const idx = path.findIndex(p => p.originalUse && p.originalUse.getAttribute('data-start') === color);
-            if (idx !== -1) {
-                const shift = (idx - targetIndex + path.length) % path.length;
-                if (shift !== 0) rotatePath(shift);
-            }
-        };
-        adjust('red', 0);
-        adjust('blue', 10);
-        adjust('green', 20);
-        adjust('yellow', 30);
-    }
-
-    function rotatePathTo(idxFrom, idxTo) {
-        const shift = (idxFrom - idxTo + path.length) % path.length;
-        rotatePath(shift);
-    }
-    function rotatePath(shift) {
-        if (shift === 0) return;
-        for (let i = 0; i < shift; i++) {
-            const v = path.shift();
-            path.push(v);
-        }
-    }
-
-    // استخراج homePathها از SVG (useهایی با data-home)
-    function extractHomePaths() {
-        COLORS.forEach(color => homePath[color] = []);
-        const homeUses = Array.from(svgEl.querySelectorAll('use[data-home]'));
-        if (homeUses.length > 0) {
-            homeUses.forEach(u => {
-                const color = u.getAttribute('data-home');
-                const x = parseFloat(u.getAttribute('x')) || 0;
-                const y = parseFloat(u.getAttribute('y')) || 0;
-                homePath[color].push({ x, y, el: u });
-            });
-            Object.keys(homePath).forEach(color => {
-                homePath[color].sort((a, b) => {
-                    const ai = parseInt(a.el.getAttribute('data-home-i') || '0', 10);
-                    const bi = parseInt(b.el.getAttribute('data-home-i') || '0', 10);
-                    return ai - bi;
-                });
-            });
-        } else {
-            // fallback اگر نبود
-            const offsets = {
-                red: { x: -15, y: -120, dx: 0, dy: 35 },
-                blue: { x: 120, y: -15, dx: -35, dy: 0 },
-                green: { x: -15, y: 120, dx: 0, dy: -35 },
-                yellow: { x: -120, y: -15, dx: 35, dy: 0 }
-            };
-            const cx = center.x, cy = center.y;
-            COLORS.forEach(color => {
-                const o = offsets[color];
-                homePath[color] = [];
-                for (let i = 0; i < HOME_LENGTH; i++) {
-                    const x = cx + (o.x + o.dx * i);
-                    const y = cy + (o.y + o.dy * i);
-                    homePath[color].push({ x, y, el: null });
+        path = mainPathCoords.map((coord, i) => {
+            const uses = Array.from(svgEl.querySelectorAll(`use[x="${coord.x}"][y="${coord.y}"]`));
+            let el = null;
+            for (const use of uses) {
+                const href = use.getAttribute('href') || use.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+                if (href === '#Feld') {
+                    el = use;
+                    break;
                 }
+            }
+            return {
+                x: coord.x,
+                y: coord.y,
+                el: el,
+                isSafe: coord.safe || false,
+                originalUse: el
+            };
+        });
+    }
+
+
+
+    // استخراج homePathها از SVG
+    function extractHomePaths() {
+        // مسیرهای خانگی بر اساس SVG شما
+        const homePathCoords = {
+            red: [
+                {x: 200, y: 600},
+                {x: 300, y: 600},
+                {x: 400, y: 600},
+                {x: 500, y: 600}
+            ],
+            blue: [
+                {x: 600, y: 200},
+                {x: 600, y: 300},
+                {x: 600, y: 400},
+                {x: 600, y: 500}
+            ],
+            green: [
+                {x: 1000, y: 600},
+                {x: 900, y: 600},
+                {x: 800, y: 600},
+                {x: 700, y: 600}
+            ],
+            yellow: [
+                {x: 600, y: 1000},
+                {x: 600, y: 900},
+                {x: 600, y: 800},
+                {x: 600, y: 700}
+            ]
+        };
+
+        COLORS.forEach(color => {
+            homePath[color] = homePathCoords[color].map(coord => {
+                const uses = Array.from(svgEl.querySelectorAll(`use[x="${coord.x}"][y="${coord.y}"]`));
+                let el = null;
+                for (const use of uses) {
+                    const href = use.getAttribute('href') || use.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+                    if (href === '#Feld') {
+                        el = use;
+                        break;
+                    }
+                }
+                return { x: coord.x, y: coord.y, el: el };
             });
-        }
+        });
     }
 
     // رندر مهره‌ها (DOM)
@@ -181,9 +297,15 @@
                 el.className = `piece ${color}`;
                 el.dataset.player = p.toString();
                 el.dataset.piece = i.toString();
-                // محل اولیه در اطراف مرکز (base)
-                el.style.left = (center.x + (p - 1.5) * 36) + 'px';
-                el.style.top = (center.y + 220 + i * 18) + 'px';
+                // محل اولیه در خانه‌های پایه
+                const basePositions = [
+                    [{x: 141, y: 42}, {x: 183, y: 42}, {x: 141, y: 84}, {x: 183, y: 84}], // Red
+                    [{x: 517, y: 42}, {x: 558, y: 42}, {x: 517, y: 84}, {x: 558, y: 84}], // Blue
+                    [{x: 517, y: 417}, {x: 558, y: 417}, {x: 517, y: 459}, {x: 558, y: 459}], // Green
+                    [{x: 141, y: 417}, {x: 183, y: 417}, {x: 141, y: 459}, {x: 183, y: 459}]  // Yellow
+                ];
+                el.style.left = basePositions[p][i].x + 'px';
+                el.style.top = basePositions[p][i].y + 'px';
                 el.textContent = (i + 1).toString();
                 el.style.pointerEvents = 'auto';
                 el.addEventListener('click', (e) => {
@@ -195,248 +317,32 @@
         }
     }
 
-    // نگهداری وضعیت منطقی بازی
-    class GameEngine {
-        constructor() {
-            this.players = [];
-            for (let p = 0; p < PLAYER_COUNT; p++) {
-                const pieces = [];
-                for (let i = 0; i < PIECES_PER_PLAYER; i++) {
-                    pieces.push({ player: p, index: i, steps: -1 }); // -1 means at base
-                }
-                this.players.push({ color: COLORS[p], pieces, finishedCount: 0 });
-            }
-            this.currentTurn = 0;
-            this.dice = 0;
-            this.mustRoll = true;
-            this.selected = null;
-            this.moveAvailablePieces = [];
-            this.uiPieces = Array.from(piecesLayer.querySelectorAll('.piece'));
-            this.updateUI();
-        }
-
-        rollDice() {
-            if (!this.mustRoll) {
-                setMessage('اکنون نمی‌توانید تاس بیندازید.');
-                return;
-            }
-            const d = Math.floor(Math.random() * 6) + 1;
-            this.dice = d;
-            diceResultEl.textContent = d;
-            setMessage(`${COLORS[this.currentTurn]}: ${d}`);
-            this.moveAvailablePieces = [];
-            const player = this.players[this.currentTurn];
-            for (const pc of player.pieces) {
-                if (this.canMovePiece(pc, d)) this.moveAvailablePieces.push(pc);
-            }
-            if (this.moveAvailablePieces.length === 0) {
-                setTimeout(() => {
-                    if (d !== 6) {
-                        this.nextTurn();
-                    } else {
-                        setMessage('6 آمد، ولی هیچ مهره‌ای قابل حرکت نیست، نوبت تکرار می‌شود.');
-                    }
-                }, 700);
-            } else {
-                setMessage(`میتوانید یکی از ${this.moveAvailablePieces.length} مهره را حرکت دهید.`);
-            }
-            this.mustRoll = false;
-            this.updateUI();
-            return d;
-        }
-
-        canMovePiece(piece, dice = this.dice) {
-            const color = COLORS[piece.player];
-            if (piece.steps === -1) {
-                return dice === 6;
-            } else {
-                const newSteps = piece.steps + dice;
-                if (newSteps > MAIN_PATH_LENGTH + HOME_LENGTH - 1) return false;
-                return true;
-            }
-        }
-
-        movePiece(piece, dice = this.dice) {
-            if (!this.canMovePiece(piece, dice)) {
-                setMessage('این مهره نمی‌تواند حرکت کند.');
-                return false;
-            }
-            const color = COLORS[piece.player];
-            if (piece.steps === -1 && dice === 6) {
-                piece.steps = 0;
-            } else {
-                piece.steps += dice;
-            }
-
-            if (piece.steps >= MAIN_PATH_LENGTH) {
-                const homeIdx = piece.steps - MAIN_PATH_LENGTH;
-                if (homeIdx < HOME_LENGTH) {
-                    this.placePieceOnHome(piece, homeIdx);
-                    if (homeIdx === HOME_LENGTH - 1) {
-                        const playerObj = this.players[piece.player];
-                        playerObj.finishedCount++;
-                        if (playerObj.finishedCount === PIECES_PER_PLAYER) {
-                            this.announceWin(piece.player);
-                        }
-                    }
-                } else {
-                    // shouldn't happen because canMovePiece blocks this
-                }
-            } else {
-                const idx = (START_INDEX[color] + piece.steps) % MAIN_PATH_LENGTH;
-                this.placePieceOnPath(piece, idx);
-                this.handleCollision(piece, idx);
-            }
-
-            const rolledSix = dice === 6;
-            if (!rolledSix) {
-                this.nextTurn();
-            } else {
-                setMessage('6 آمد؛ شما دوباره می‌توانید تاس بیندازید.');
-                this.mustRoll = true;
-            }
-            this.updateUI();
-            return true;
-        }
-
-        placePieceOnPath(piece, idx) {
-            const node = path[idx];
-            if (!node) return;
-            // قرار دادن چند مهره روی یک خانه با کمی جابجایی (stack)
-            const overlapping = this.countPiecesOnPathNode(idx);
-            const angleOffset = (overlapping % 4) * 10;
-            const offsetX = (overlapping % 2 === 0) ? -10 : 10;
-            const offsetY = Math.floor(overlapping / 2) * 10;
-            this.updatePieceDOMPosition(piece, node.x + offsetX, node.y + offsetY);
-        }
-
-        countPiecesOnPathNode(idx) {
-            let c = 0;
-            for (const pObj of this.players) {
-                for (const pc of pObj.pieces) {
-                    if (pc.steps >= 0 && pc.steps < MAIN_PATH_LENGTH) {
-                        const nodeIdx = (START_INDEX[COLORS[pc.player]] + pc.steps) % MAIN_PATH_LENGTH;
-                        if (nodeIdx === idx) c++;
-                    }
-                }
-            }
-            return c;
-        }
-
-        placePieceOnHome(piece, homeIdx) {
-            const color = COLORS[piece.player];
-            const node = homePath[color][homeIdx];
-            if (!node) return;
-            this.updatePieceDOMPosition(piece, node.x, node.y);
-        }
-
-        updatePieceDOMPosition(piece, x, y) {
-            const el = this.findPieceElement(piece);
-            if (!el) return;
-            el.style.left = x + 'px';
-            el.style.top = y + 'px';
-            el.classList.add('selected');
-            setTimeout(() => el.classList.remove('selected'), 420);
-        }
-
-        handleCollision(movedPiece, landedIndex) {
-            const isSafe = path[landedIndex] && path[landedIndex].isSafe;
-            if (isSafe) return;
-            for (const pObj of this.players) {
-                for (const pc of pObj.pieces) {
-                    if (pc.player === movedPiece.player) continue;
-                    if (pc.steps >= 0 && pc.steps < MAIN_PATH_LENGTH) {
-                        const idx = (START_INDEX[COLORS[pc.player]] + pc.steps) % MAIN_PATH_LENGTH;
-                        if (idx === landedIndex) {
-                            pc.steps = -1;
-                            const el = this.findPieceElement(pc);
-                            if (el) {
-                                el.style.left = (center.x + (pc.player - 1.5) * 36) + 'px';
-                                el.style.top = (center.y + 220 + pc.index * 18) + 'px';
-                            }
-                            setMessage(`${COLORS[pc.player]} مهره‌اش به خانهٔ اول بازگشت.`);
-                        }
-                    }
-                }
-            }
-        }
-
-        enterHomePath(piece) { /* منطق از طریق steps مدیریت می‌شود */ }
-
-        checkWin() {
-            for (let p = 0; p < PLAYER_COUNT; p++) {
-                if (this.players[p].finishedCount === PIECES_PER_PLAYER) return p;
-            }
-            return -1;
-        }
-
-        announceWin(playerIndex) {
-            setMessage(`بازیکن ${COLORS[playerIndex]} برنده شد!`);
-            rollBtn.disabled = true;
-            endBtn.disabled = true;
-        }
-
-        nextTurn() {
-            this.currentTurn = (this.currentTurn + 1) % PLAYER_COUNT;
-            this.mustRoll = true;
-            this.dice = 0;
-            diceResultEl.textContent = '-';
-            this.selected = null;
-            this.moveAvailablePieces = [];
-            this.updateUI();
-        }
-
-        findPieceElement(piece) {
-            return piecesLayer.querySelector(`.piece[data-player="${piece.player}"][data-piece="${piece.index}"]`);
-        }
-
-        updateUI() {
-            currentTurnEl.textContent = COLORS[this.currentTurn];
-            this.uiPieces = Array.from(piecesLayer.querySelectorAll('.piece'));
-            this.uiPieces.forEach(el => {
-                const pl = parseInt(el.dataset.player, 10);
-                const pi = parseInt(el.dataset.piece, 10);
-                const piece = this.players[pl].pieces[pi];
-                if (pl === this.currentTurn && !this.mustRoll && this.moveAvailablePieces.some(m => m.player === pl && m.index === pi)) {
-                    el.style.boxShadow = '0 0 0 6px rgba(13,110,253,0.12)';
-                } else {
-                    el.style.boxShadow = '';
-                }
+    function onPieceClick(el) {
+        const player = parseInt(el.dataset.player, 10);
+        const pieceIndex = parseInt(el.dataset.piece, 10);
+        
+        if (connection) {
+            connection.invoke("MovePiece", player, pieceIndex).catch(function (err) {
+                return console.error(err.toString());
             });
         }
     }
 
-    // نگهدارندهٔ نمونه بازی
-    let engine = null;
-
-    function onPieceClick(el) {
-        const player = parseInt(el.dataset.player, 10);
-        const pieceIndex = parseInt(el.dataset.piece, 10);
-        if (player !== engine.currentTurn) {
-            setMessage('این مهره مربوط به نوبت فعلی نیست.');
-            return;
-        }
-        const piece = engine.players[player].pieces[pieceIndex];
-        if (engine.mustRoll) {
-            setMessage('ابتدا تاس بیندازید.');
-            return;
-        }
-        if (!engine.canMovePiece(piece)) {
-            setMessage('این مهره نمی‌تواند با مقدار تاس فعلی حرکت کند.');
-            return;
-        }
-        engine.movePiece(piece);
-    }
-
     function setupButtons() {
         rollBtn.addEventListener('click', () => {
-            if (!engine) return;
-            engine.rollDice();
+            if (connection) {
+                connection.invoke("RollDice").catch(function (err) {
+                    return console.error(err.toString());
+                });
+            }
         });
+        
         endBtn.addEventListener('click', () => {
-            if (!engine) return;
-            engine.nextTurn();
-            setMessage('نوبت پایان یافت.');
+            if (connection) {
+                connection.invoke("ResetGame").catch(function (err) {
+                    return console.error(err.toString());
+                });
+            }
         });
     }
 
@@ -446,13 +352,12 @@
         extractOrCreateOuterPath();
         extractHomePaths();
         createPiecesDOM();
-        engine = new GameEngine();
         setupButtons();
+        connectToGame();
         setMessage('آماده. بازیکن قرمز شروع کند؛ ابتدا تاس بیندازید.');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
         init().catch(err => console.error(err));
     });
-
 })();
