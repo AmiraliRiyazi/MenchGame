@@ -30,7 +30,6 @@ C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\rjimswa.dswa.cache.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\rjsmrazor.dswa.cache.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\rjsmcshtml.dswa.cache.json
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\scopedcss\bundle\MenchGame.styles.css
-C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\oo8lwwouxr-az1jpor9vj.gz
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\sbvlwmvnin-hfkm9bq1ht.gz
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\369gvxf33h-61n19gt1b8.gz
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\staticwebassets.build.json
@@ -44,6 +43,7 @@ C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\MenchGame.genruntimeconfig.c
 C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\ref\MenchGame.dll
 c:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\images\Menschenaergern.svg
 c:\Users\Amirali\Desktop\MenchGame\bin\Debug\net9.0\wwwroot\images\Menschenaergern.svg.gz
-c:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\pxadrf7aia-dfnj9w6t2z.gz
 c:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\flimddp2bj-stxaymq0z7.gz
-C:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\44xw6kyxfa-ogjf31izhq.gz
+c:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\pxadrf7aia-0m378wn1pk.gz
+c:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\oo8lwwouxr-j3k7hcgl28.gz
+c:\Users\Amirali\Desktop\MenchGame\obj\Debug\net9.0\compressed\44xw6kyxfa-bk7x2r7x9e.gz

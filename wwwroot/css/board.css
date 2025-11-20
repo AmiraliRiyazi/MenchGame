@@ -31,3 +31,19 @@
 
 /* لایهٔ مهره‌ها بالای SVG */
 #pieces-layer { pointer-events:none; }
+
+/* SVG piece styling */
+svg .red use { fill: #e03131; }
+svg .blue use { fill: #1971c2; }
+svg .green use { fill: #1b8a44; }
+svg .yellow use { fill: #f59f00; }
+
+svg g {
+    transition: transform 400ms ease;
+    pointer-events: auto;
+}
+
+svg text {
+    pointer-events: none;
+    user-select: none;
+}

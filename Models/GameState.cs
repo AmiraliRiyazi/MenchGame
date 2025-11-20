@@ -10,6 +10,7 @@ public class GameState
     public bool MustRoll { get; set; } = true;
     public bool GameOver { get; set; } = false;
     public int WinnerPlayerId { get; set; } = -1;
+    private HashSet<(int playerId, int pieceId)> _movedPiecesInCurrentTurn = new();
 
     public GameState()
     {
@@ -55,6 +56,7 @@ public class GameState
         Random rnd = new Random();
         DiceValue = rnd.Next(1, 7);
         MustRoll = false;
+        _movedPiecesInCurrentTurn.Clear(); // Clear moved pieces when rolling dice
         return DiceValue;
     }
 
@@ -63,6 +65,8 @@ public class GameState
         if (GameOver) return false;
         if (playerId != CurrentPlayerIndex) return false;
         if (MustRoll) return false;
+        // Check if piece has already been moved in this turn
+        if (_movedPiecesInCurrentTurn.Contains((playerId, pieceId))) return false;
 
         var player = Players.FirstOrDefault(p => p.Id == playerId);
         if (player == null) return false;
@@ -96,6 +100,9 @@ public class GameState
         var piece = player.Pieces.FirstOrDefault(p => p.Id == pieceId);
         if (piece == null) return false;
 
+        // Mark this piece as moved in current turn
+        _movedPiecesInCurrentTurn.Add((playerId, pieceId));
+
         // If piece is at base and dice is 6, move it to start position
         if (piece.Position == -1 && DiceValue == 6)
         {
@@ -126,6 +133,9 @@ public class GameState
             HandleCollisions(playerId, piece.Position);
         }
 
+        // After moving a piece, clear the moved pieces tracking
+        _movedPiecesInCurrentTurn.Clear();
+        
         // If player didn't roll a 6, go to next player
         if (DiceValue != 6)
         {

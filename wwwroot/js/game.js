@@ -9,7 +9,6 @@
 
     // DOM
     const svgContainer = document.getElementById('svg-container');
-    const piecesLayer = document.getElementById('pieces-layer');
     const rollBtn = document.getElementById('roll-btn');
     const endBtn = document.getElementById('end-btn');
     const currentTurnEl = document.getElementById('current-turn');
@@ -55,7 +54,7 @@
             });
 
             connection.on("PieceMoved", function (playerId, pieceId, newPosition, oldPosition) {
-                const pieceEl = piecesLayer.querySelector(`.piece[data-player="${playerId}"][data-piece="${pieceId}"]`);
+                const pieceEl = getPieceElement(playerId, pieceId);
                 if (pieceEl) {
                     // Update piece position based on new position
                     updatePiecePosition(pieceEl, playerId, newPosition);
@@ -96,7 +95,7 @@
         // Update pieces positions
         gameState.Players.forEach(player => {
             player.Pieces.forEach(piece => {
-                const pieceEl = piecesLayer.querySelector(`.piece[data-player="${player.Id}"][data-piece="${piece.Id}"]`);
+                const pieceEl = getPieceElement(player.Id, piece.Id);
                 if (pieceEl) {
                     updatePiecePosition(pieceEl, player.Id, piece.Position);
                 }
@@ -104,32 +103,61 @@
         });
     }
 
+    function getPieceElement(playerId, pieceId) {
+        // Get the SVG piece element based on player and piece ID
+        const color = COLORS[playerId];
+        const playerGroup = svgEl.querySelector(`.${color}`);
+        if (playerGroup) {
+            const pieces = playerGroup.querySelectorAll('g');
+            if (pieces.length > pieceId) {
+                // Return the entire group element so both circle and text move together
+                return pieces[pieceId];
+            }
+        }
+        return null;
+    }
+
     function updatePiecePosition(pieceEl, playerId, position) {
+        // Get the use element (the circle) from the group
+        const useEl = pieceEl.querySelector('use');
+        if (!useEl) return;
+        
         const basePositions = [
-            [{x: 141, y: 42}, {x: 183, y: 42}, {x: 141, y: 84}, {x: 183, y: 84}], // Red
-            [{x: 517, y: 42}, {x: 558, y: 42}, {x: 517, y: 84}, {x: 558, y: 84}], // Blue
-            [{x: 517, y: 417}, {x: 558, y: 417}, {x: 517, y: 459}, {x: 558, y: 459}], // Green
-            [{x: 141, y: 417}, {x: 183, y: 417}, {x: 141, y: 459}, {x: 183, y: 459}]  // Yellow
+            [{x: 100, y: 100}, {x: 100, y: 200}, {x: 200, y: 100}, {x: 200, y: 200}], // Red
+            [{x: 1000, y: 100}, {x: 1100, y: 100}, {x: 1000, y: 200}, {x: 1100, y: 200}], // Blue
+            [{x: 1000, y: 1000}, {x: 1100, y: 1000}, {x: 1000, y: 1100}, {x: 1100, y: 1100}], // Green
+            [{x: 100, y: 1000}, {x: 100, y: 1100}, {x: 200, y: 1000}, {x: 200, y: 1100}]  // Yellow
         ];
 
         // If piece is at base (-1)
         if (position === -1) {
-            const pieceIndex = parseInt(pieceEl.dataset.piece);
-            pieceEl.style.left = basePositions[playerId][pieceIndex].x + 'px';
-            pieceEl.style.top = basePositions[playerId][pieceIndex].y + 'px';
+            // Get the piece index from the text element
+            const textEl = pieceEl.querySelector('text');
+            const pieceIndex = parseInt(textEl.textContent) - 1;
+            // Change the x and y attributes of the use element directly
+            const pos = basePositions[playerId][pieceIndex];
+            useEl.setAttribute('x', pos.x);
+            useEl.setAttribute('y', pos.y);
+            // Also update the text position
+            textEl.setAttribute('x', pos.x);
+            textEl.setAttribute('y', pos.y);
             return;
         }
 
         // If piece is entering the board (first move from base)
         if (position === 0) { // First position on main path
             const startPositions = [
-                {x: 141, y: 209}, // Red start
-                {x: 392, y: 42},  // Blue start
-                {x: 558, y: 292}, // Green start
-                {x: 309, y: 459}  // Yellow start
+                {x: 100, y: 500}, // Red start
+                {x: 700, y: 100},  // Blue start
+                {x: 1100, y: 700}, // Green start
+                {x: 500, y: 1100}  // Yellow start
             ];
-            pieceEl.style.left = startPositions[playerId].x + 'px';
-            pieceEl.style.top = startPositions[playerId].y + 'px';
+            const pos = startPositions[playerId];
+            useEl.setAttribute('x', pos.x);
+            useEl.setAttribute('y', pos.y);
+            // Also update the text position
+            textEl.setAttribute('x', pos.x);
+            textEl.setAttribute('y', pos.y);
             return;
         }
 
@@ -139,8 +167,12 @@
             const homeIdx = position - MAIN_PATH_LENGTH;
             if (homeIdx < HOME_LENGTH && homePath[color][homeIdx]) {
                 const node = homePath[color][homeIdx];
-                pieceEl.style.left = node.x + 'px';
-                pieceEl.style.top = node.y + 'px';
+                useEl.setAttribute('x', node.x);
+                useEl.setAttribute('y', node.y);
+                // Also update the text position
+                const textEl = pieceEl.querySelector('text');
+                textEl.setAttribute('x', node.x);
+                textEl.setAttribute('y', node.y);
             }
             return;
         }
@@ -151,8 +183,12 @@
             const idx = (START_INDEX[color] + position - 1) % MAIN_PATH_LENGTH;
             const node = path[idx];
             if (node) {
-                pieceEl.style.left = node.x + 'px';
-                pieceEl.style.top = node.y + 'px';
+                useEl.setAttribute('x', node.x);
+                useEl.setAttribute('y', node.y);
+                // Also update the text position
+                const textEl = pieceEl.querySelector('text');
+                textEl.setAttribute('x', node.x);
+                textEl.setAttribute('y', node.y);
             }
         }
     }
@@ -302,40 +338,30 @@
 
     // رندر مهره‌ها (DOM)
     function createPiecesDOM() {
-        piecesLayer.innerHTML = '';
+        // Since pieces are already in SVG, we just need to add event listeners
+        // Add click event listeners to all pieces
         for (let p = 0; p < PLAYER_COUNT; p++) {
             const color = COLORS[p];
-            for (let i = 0; i < PIECES_PER_PLAYER; i++) {
-                const el = document.createElement('div');
-                el.className = `piece ${color}`;
-                el.dataset.player = p.toString();
-                el.dataset.piece = i.toString();
-                // محل اولیه در خانه‌های پایه
-                const basePositions = [
-                    [{x: 141, y: 42}, {x: 183, y: 42}, {x: 141, y: 84}, {x: 183, y: 84}], // Red
-                    [{x: 517, y: 42}, {x: 558, y: 42}, {x: 517, y: 84}, {x: 558, y: 84}], // Blue
-                    [{x: 517, y: 417}, {x: 558, y: 417}, {x: 517, y: 459}, {x: 558, y: 459}], // Green
-                    [{x: 141, y: 417}, {x: 183, y: 417}, {x: 141, y: 459}, {x: 183, y: 459}]  // Yellow
-                ];
-                el.style.left = basePositions[p][i].x + 'px';
-                el.style.top = basePositions[p][i].y + 'px';
-                el.textContent = (i + 1).toString();
-                el.style.pointerEvents = 'auto';
-                el.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    onPieceClick(el);
+            const playerGroup = svgEl.querySelector(`.${color}`);
+            if (playerGroup) {
+                const pieceGroups = playerGroup.querySelectorAll('g');
+                pieceGroups.forEach((pieceGroup, index) => {
+                    // Make the entire group clickable
+                    pieceGroup.style.cursor = 'pointer';
+                    pieceGroup.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        onPieceClick({playerId: p, pieceId: index});
+                    });
                 });
-                piecesLayer.appendChild(el);
             }
         }
     }
 
-    function onPieceClick(el) {
-        const player = parseInt(el.dataset.player, 10);
-        const pieceIndex = parseInt(el.dataset.piece, 10);
+    function onPieceClick(data) {
+        const {playerId, pieceId} = data;
         
         if (connection) {
-            connection.invoke("MovePiece", player, pieceIndex).catch(function (err) {
+            connection.invoke("MovePiece", playerId, pieceId).catch(function (err) {
                 return console.error(err.toString());
             });
         }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj": {}
+    "c:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj": {
+    "c:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj",
+        "projectUniqueName": "c:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj",
         "projectName": "MenchGame",
-        "projectPath": "C:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj",
+        "projectPath": "c:\\Users\\Amirali\\Desktop\\MenchGame\\MenchGame.csproj",
         "packagesPath": "C:\\Users\\Amirali\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Amirali\\Desktop\\MenchGame\\obj\\",
+        "outputPath": "c:\\Users\\Amirali\\Desktop\\MenchGame\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Amirali\\AppData\\Roaming\\NuGet\\NuGet.Config"
