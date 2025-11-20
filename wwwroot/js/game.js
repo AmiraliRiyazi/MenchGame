@@ -106,10 +106,10 @@
 
     function updatePiecePosition(pieceEl, playerId, position) {
         const basePositions = [
-            [{x: 100, y: 100}, {x: 200, y: 100}, {x: 100, y: 200}, {x: 200, y: 200}], // Red
-            [{x: 1000, y: 100}, {x: 1100, y: 100}, {x: 1000, y: 200}, {x: 1100, y: 200}], // Blue
-            [{x: 1000, y: 1000}, {x: 1100, y: 1000}, {x: 1000, y: 1100}, {x: 1100, y: 1100}], // Green
-            [{x: 100, y: 1000}, {x: 200, y: 1000}, {x: 100, y: 1100}, {x: 200, y: 1100}]  // Yellow
+            [{x: 141, y: 42}, {x: 183, y: 42}, {x: 141, y: 84}, {x: 183, y: 84}], // Red
+            [{x: 517, y: 42}, {x: 558, y: 42}, {x: 517, y: 84}, {x: 558, y: 84}], // Blue
+            [{x: 517, y: 417}, {x: 558, y: 417}, {x: 517, y: 459}, {x: 558, y: 459}], // Green
+            [{x: 141, y: 417}, {x: 183, y: 417}, {x: 141, y: 459}, {x: 183, y: 459}]  // Yellow
         ];
 
         // If piece is at base (-1)
@@ -117,6 +117,19 @@
             const pieceIndex = parseInt(pieceEl.dataset.piece);
             pieceEl.style.left = basePositions[playerId][pieceIndex].x + 'px';
             pieceEl.style.top = basePositions[playerId][pieceIndex].y + 'px';
+            return;
+        }
+
+        // If piece is entering the board (first move from base)
+        if (position === 0) { // First position on main path
+            const startPositions = [
+                {x: 141, y: 209}, // Red start
+                {x: 392, y: 42},  // Blue start
+                {x: 558, y: 292}, // Green start
+                {x: 309, y: 459}  // Yellow start
+            ];
+            pieceEl.style.left = startPositions[playerId].x + 'px';
+            pieceEl.style.top = startPositions[playerId].y + 'px';
             return;
         }
 
@@ -132,10 +145,10 @@
             return;
         }
 
-        // If piece is on main path (0-39)
-        if (position >= 0 && position < MAIN_PATH_LENGTH) {
+        // If piece is on main path (1-39)
+        if (position >= 1 && position < MAIN_PATH_LENGTH) {
             const color = COLORS[playerId];
-            const idx = (START_INDEX[color] + position) % MAIN_PATH_LENGTH;
+            const idx = (START_INDEX[color] + position - 1) % MAIN_PATH_LENGTH;
             const node = path[idx];
             if (node) {
                 pieceEl.style.left = node.x + 'px';

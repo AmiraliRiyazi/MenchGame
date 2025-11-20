@@ -99,7 +99,7 @@ public class GameState
         // If piece is at base and dice is 6, move it to start position
         if (piece.Position == -1 && DiceValue == 6)
         {
-            piece.Position = GetStartPosition(playerId);
+            piece.Position = 0; // First position on main path
         }
         else if (piece.Position >= 0)
         {
